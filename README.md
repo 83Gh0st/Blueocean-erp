@@ -204,16 +204,38 @@ API route always re-checks who's logged in before doing anything.
 - **Delete a transaction**: admin-only, on purpose — staff can log and
   correct their own entries, but outright removal needs a more
   deliberate gate.
+- **Invoice a customer**: Billing → New invoice, add line items — the
+  PDF (download icon on each row) is a real tax invoice, generated on
+  demand, not stored as a file. Mark it Sent once it's gone out, Paid
+  once it's settled. Only a Draft can be deleted outright; anything
+  further along gets Cancelled instead, so the invoice number and record
+  stay intact (useful once a number's been quoted to a customer).
+- **Track stock**: Inventory → New item to start tracking something, Log
+  movement for every time stock comes in or goes out. Current stock
+  updates automatically — you never edit it directly, only through
+  logged movements, so there's always a record of *why* a number
+  changed.
 
 ---
 
 ## What's built vs. what's next
 
 **Working end to end**: real per-user login, Master Data, Transactions
-(with VAT and full audit trail), Cash Ledger, Staff Accounts.
+(with VAT and full audit trail), Cash Ledger, Staff Accounts, **Billing
+(customer invoices with real UAE tax-invoice PDFs and a
+draft→sent→paid/cancelled status workflow)**, **Inventory (raw materials
+and finished goods, stock movements, low-stock alerts)**.
 
-**Schema defined, no screens yet** (so adding these won't mean reworking
-the foundation): Billing/invoicing, Inventory, AI Insights.
+**Next up**: Procurement (formal purchase orders to suppliers), HR &
+Payroll (needs UAE gratuity/WPS rules verified against current sources
+before the calculation logic is written — not something to guess at),
+then Reports & Analytics and AI Insights once the rest of the data is
+flowing.
+
+**Before sending a real invoice**: open `src/lib/company-info.ts` and
+replace the placeholder address/TRN with your real details — a UAE tax
+invoice is legally required to show a real Tax Registration Number, and
+what's in there now is not one.
 
 ## What's deliberately different from the reference app
 

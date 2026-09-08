@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Receipt, Wallet, Settings2, Users, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, Receipt, Wallet, Settings2, Users, LogOut, UserCircle, FileText, Boxes } from "lucide-react";
 import type { SessionUser } from "@/lib/auth";
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
@@ -10,7 +10,9 @@ type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; exac
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/transactions", label: "Transactions", icon: Receipt },
+  { href: "/billing", label: "Billing", icon: FileText },
   { href: "/cash", label: "Cash Ledger", icon: Wallet },
+  { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/master-data", label: "Master Data", icon: Settings2 },
   { href: "/account", label: "My Account", icon: UserCircle },
 ];
