@@ -210,11 +210,14 @@ API route always re-checks who's logged in before doing anything.
   once it's settled. Only a Draft can be deleted outright; anything
   further along gets Cancelled instead, so the invoice number and record
   stay intact (useful once a number's been quoted to a customer).
-- **Track stock**: Inventory → New item to start tracking something, Log
-  movement for every time stock comes in or goes out. Current stock
-  updates automatically — you never edit it directly, only through
-  logged movements, so there's always a record of *why* a number
-  changed.
+- **Track stock**: Inventory → New item to start tracking something
+  (unit is free text — Kg, Ltr, Pail, Can, whatever actually applies).
+  Log movement for every time stock changes: **Receipt** (goods in from a
+  supplier), **Production** (finished goods coming out of manufacturing),
+  or **Consumption** (raw material used, or goods going out). Current
+  stock, and the running opening/closing balance shown in the Stock
+  Ledger below it, update automatically from these — you never edit the
+  stock number directly.
 
 ---
 
@@ -246,12 +249,36 @@ what's in there now is not one.
 - **Postgres `numeric` for money, not floating point** — the reference
   app used floats, which can't represent most decimal amounts exactly
   and drifts on large sums.
+- **postgres-js over Neon's pooled connection, not the neon-http
+  driver** — invoice creation (header + line items) and inventory
+  movements (stock update + ledger row) both need a real
+  `db.transaction()` so a failure partway through can't leave an
+  invoice with no line items, or a stock count out of sync with its own
+  movement log. The HTTP driver is stateless (one request at a time,
+  no persistent connection), so it can't hold a multi-statement
+  transaction open at all — worth knowing if you extend this further:
+  anything that needs multiple related writes to succeed or fail
+  together needs to go through `db.transaction()`, which only works with
+  this driver setup.
 - **Neon Postgres instead of a local SQLite file** — required for
   Vercel's stateless hosting; also means real managed backups instead of
   the reference app's local-folder backup feature (which has no
   equivalent here, and doesn't need one).
 
 ## Troubleshooting
+
+- **"No transactions support in neon-http driver"**: this was a real bug
+  in an earlier version — invoice creation and inventory movements both
+  need `db.transaction()`, which the HTTP driver can't do at all. Fixed
+  as of this version by switching to `postgres-js` over Neon's pooled
+  connection. If you already ran `db:migrate` with the old inventory
+  schema and logged any test movements, running the new migration will
+  fail on those rows (it adds required columns with no default, and
+  changes the movement-type values from in/out to
+  receipt/production/consumption) — easiest fix at this stage is to drop
+  and recreate the database in Neon's dashboard and re-run
+  `db:migrate`/`db:seed` from scratch, since there's no real data to
+  preserve yet.
 
 - **"DATABASE_URL is not set" when running `npm run dev`**: make sure
   `.env.local` exists (copied from `.env.example`) and has a real

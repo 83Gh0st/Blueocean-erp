@@ -18,20 +18,30 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const itemName = typeof body?.itemName === "string" ? body.itemName.trim() : "";
   const category = typeof body?.category === "string" ? body.category.trim() : "";
-  const unit = typeof body?.unit === "string" && body.unit.trim() ? body.unit.trim() : "PCS";
+  const unit = typeof body?.unit === "string" ? body.unit.trim() : "";
   const minStock = Number(body?.minStock) || 0;
   const maxStock = Number(body?.maxStock) || 0;
   const openingStock = Number(body?.openingStock) || 0;
+  const unitPrice = Number(body?.unitPrice) || 0;
 
   if (!itemName) return NextResponse.json({ error: "Item name is required." }, { status: 400 });
-  if (minStock < 0 || maxStock < 0 || openingStock < 0) {
-    return NextResponse.json({ error: "Stock levels can't be negative." }, { status: 400 });
+  if (!unit) return NextResponse.json({ error: "Unit is required (e.g. Kg, Ltr, Pail, Can)." }, { status: 400 });
+  if (minStock < 0 || maxStock < 0 || openingStock < 0 || unitPrice < 0) {
+    return NextResponse.json({ error: "Amounts can't be negative." }, { status: 400 });
   }
 
   try {
     const [row] = await db
       .insert(inventoryItems)
-      .values({ itemName, category, unit, minStock: minStock.toFixed(2), maxStock: maxStock.toFixed(2), currentStock: openingStock.toFixed(2) })
+      .values({
+        itemName,
+        category,
+        unit,
+        minStock: minStock.toFixed(2),
+        maxStock: maxStock.toFixed(2),
+        currentStock: openingStock.toFixed(2),
+        unitPrice: unitPrice.toFixed(2),
+      })
       .returning();
     return NextResponse.json(row, { status: 201 });
   } catch {

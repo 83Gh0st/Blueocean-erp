@@ -1,6 +1,6 @@
 import { config } from "dotenv";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import { departments, expenseHeads, paymentModes, users } from "./schema";
 import bcrypt from "bcryptjs";
@@ -51,8 +51,8 @@ async function main() {
   }
   if (adminPassword.length < 8) throw new Error("SEED_ADMIN_PASSWORD must be at least 8 characters.");
 
-  const sql = neon(process.env.DATABASE_URL);
-  const db = drizzle(sql, { schema });
+  const client = postgres(process.env.DATABASE_URL, { max: 1, prepare: false });
+  const db = drizzle(client, { schema });
 
   const existingDepts = await db.select().from(departments).limit(1);
   if (existingDepts.length > 0) {
@@ -79,6 +79,7 @@ async function main() {
   }
 
   console.log("Seed complete.");
+  await client.end();
 }
 
 main().catch((err) => {

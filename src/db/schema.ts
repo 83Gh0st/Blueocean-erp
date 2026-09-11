@@ -193,13 +193,26 @@ export const inventoryItems = pgTable("inventory_items", {
   id: serial("id").primaryKey(),
   itemName: varchar("item_name", { length: 200 }).notNull().unique(),
   category: varchar("category", { length: 100 }).default(""),
-  unit: varchar("unit", { length: 20 }).default("PCS"),
+  // Free text on purpose (Kg, Ltr, Pail, Can, Drum, Bag, ...) rather than
+  // a fixed list — the units a chemical manufacturer actually uses for
+  // raw materials and packaged finished goods vary more than a small
+  // preset dropdown can predict.
+  unit: varchar("unit", { length: 30 }).default(""),
   currentStock: numeric("current_stock", { precision: 12, scale: 2 }).notNull().default("0"),
   minStock: numeric("min_stock", { precision: 12, scale: 2 }).notNull().default("0"),
   maxStock: numeric("max_stock", { precision: 12, scale: 2 }).notNull().default("0"),
+  // The item's current/standard cost per unit — used as the default
+  // price on a new movement (receipts especially), and to value stock on
+  // hand (currentStock × unitPrice) on the stock overview.
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull().default("0"),
 });
 
-export const inventoryMovementTypeEnum = pgEnum("movement_type", ["in", "out"]);
+// Receipt: stock arriving from a supplier (raw materials purchased).
+// Production: stock arriving from manufacturing (finished goods made).
+// Consumption: stock leaving — raw material used in production, or
+// finished goods dispatched. Receipt and Production both increase
+// stock; Consumption decreases it.
+export const inventoryMovementTypeEnum = pgEnum("movement_type", ["receipt", "consumption", "production"]);
 
 export const inventoryMovements = pgTable("inventory_movements", {
   id: serial("id").primaryKey(),
@@ -207,8 +220,19 @@ export const inventoryMovements = pgTable("inventory_movements", {
     .notNull()
     .references(() => inventoryItems.id, { onDelete: "cascade" }),
   date: date("date").notNull(),
-  quantity: numeric("quantity", { precision: 12, scale: 2 }).notNull(),
   movementType: inventoryMovementTypeEnum("movement_type").notNull(),
+  quantity: numeric("quantity", { precision: 12, scale: 2 }).notNull(),
+  // Stored directly on the row (computed once, at insert time) rather
+  // than recalculated on every read — same pattern as the Cash Ledger's
+  // opening/closing balance, and for the same reason: a ledger view
+  // should show exactly what the balance was at that moment, not a
+  // number that shifts if earlier history is later edited.
+  openingStock: numeric("opening_stock", { precision: 12, scale: 2 }).notNull(),
+  closingStock: numeric("closing_stock", { precision: 12, scale: 2 }).notNull(),
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  totalPrice: numeric("total_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  vatAmount: numeric("vat_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  grandTotal: numeric("grand_total", { precision: 12, scale: 2 }).notNull().default("0"),
   transactionId: integer("transaction_id").references(() => transactions.id, { onDelete: "set null" }),
   notes: text("notes").default(""),
   createdBy: integer("created_by").references(() => users.id, { onDelete: "restrict" }),

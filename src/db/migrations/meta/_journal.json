@@ -8,6 +8,13 @@
       "when": 1788625048833,
       "tag": "0000_dark_toxin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789112953454,
+      "tag": "0001_military_bedlam",
+      "breakpoints": true
     }
   ]
 }

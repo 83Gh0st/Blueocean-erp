@@ -1,7 +1,7 @@
 import { config } from "dotenv";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { migrate } from "drizzle-orm/neon-http/migrator";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 // This script runs standalone via `tsx`, outside of Next.js entirely —
 // Next.js auto-loads .env.local for `next dev`/`build`/`start`, but that
@@ -15,10 +15,14 @@ async function main() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
   }
-  const sql = neon(process.env.DATABASE_URL);
-  const db = drizzle(sql);
+  // max: 1 — migrations run as a strict sequence of DDL statements; a
+  // single connection avoids any chance of two of them racing over a
+  // pooled connection.
+  const client = postgres(process.env.DATABASE_URL, { max: 1, prepare: false });
+  const db = drizzle(client);
   console.log("Running migrations...");
   await migrate(db, { migrationsFolder: "./src/db/migrations" });
+  await client.end();
   console.log("Done.");
 }
 

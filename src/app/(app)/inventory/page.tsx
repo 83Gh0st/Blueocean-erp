@@ -12,6 +12,12 @@ export default async function InventoryPage() {
         date: inventoryMovements.date,
         quantity: inventoryMovements.quantity,
         movementType: inventoryMovements.movementType,
+        openingStock: inventoryMovements.openingStock,
+        closingStock: inventoryMovements.closingStock,
+        unitPrice: inventoryMovements.unitPrice,
+        totalPrice: inventoryMovements.totalPrice,
+        vatAmount: inventoryMovements.vatAmount,
+        grandTotal: inventoryMovements.grandTotal,
         notes: inventoryMovements.notes,
         itemId: inventoryMovements.itemId,
         itemName: inventoryItems.itemName,
@@ -22,7 +28,7 @@ export default async function InventoryPage() {
       .innerJoin(inventoryItems, eq(inventoryMovements.itemId, inventoryItems.id))
       .leftJoin(users, eq(inventoryMovements.createdBy, users.id))
       .orderBy(desc(inventoryMovements.date), desc(inventoryMovements.id))
-      .limit(100),
+      .limit(200),
   ]);
 
   return (
