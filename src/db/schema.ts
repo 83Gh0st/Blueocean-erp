@@ -245,3 +245,60 @@ export const aiInsights = pgTable("ai_insights", {
   insight: text("insight").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Procurement — suppliers and purchase orders. Not in the reference app
+// at all; added because raw-material purchasing is a real, named part of
+// Blue Ocean's own expense categories (RM PURCHASE-PROD). Receiving a PO
+// line that's linked to an inventory item creates a real inventory
+// Receipt movement automatically — the point of a formal PO step is
+// exactly this: procurement and inventory should agree with each other,
+// not be two separate records someone has to keep in sync by hand.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull().unique(),
+  contactPerson: varchar("contact_person", { length: 150 }).default(""),
+  phone: varchar("phone", { length: 50 }).default(""),
+  email: varchar("email", { length: 200 }).default(""),
+  address: text("address").default(""),
+  trn: varchar("trn", { length: 50 }).default(""),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const poStatusEnum = pgEnum("po_status", ["draft", "sent", "partially_received", "received", "cancelled"]);
+
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  poNumber: varchar("po_number", { length: 50 }).notNull().unique(),
+  supplierId: integer("supplier_id")
+    .notNull()
+    .references(() => suppliers.id, { onDelete: "restrict" }),
+  date: date("date").notNull(),
+  expectedDate: date("expected_date"),
+  notes: text("notes").default(""),
+  baseAmount: numeric("base_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  vatAmount: numeric("vat_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  status: poStatusEnum("status").notNull().default("draft"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: serial("id").primaryKey(),
+  poId: integer("po_id")
+    .notNull()
+    .references(() => purchaseOrders.id, { onDelete: "cascade" }),
+  // Optional on purpose — a PO line for something one-off (a service, a
+  // repair) doesn't need to correspond to a tracked inventory item.
+  itemId: integer("item_id").references(() => inventoryItems.id, { onDelete: "set null" }),
+  description: varchar("description", { length: 200 }).notNull(),
+  quantityOrdered: numeric("quantity_ordered", { precision: 12, scale: 2 }).notNull(),
+  quantityReceived: numeric("quantity_received", { precision: 12, scale: 2 }).notNull().default("0"),
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+  vatRate: numeric("vat_rate", { precision: 4, scale: 3 }).notNull().default("0.05"),
+  lineTotal: numeric("line_total", { precision: 12, scale: 2 }).notNull(),
+});

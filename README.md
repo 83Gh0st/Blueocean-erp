@@ -218,24 +218,46 @@ API route always re-checks who's logged in before doing anything.
   stock, and the running opening/closing balance shown in the Stock
   Ledger below it, update automatically from these — you never edit the
   stock number directly.
+- **Order from a supplier**: Procurement → add the supplier once, then
+  New PO. Line items can optionally link to a tracked inventory item —
+  when they do, using Receive on that PO later creates the actual stock
+  Receipt movement for you, at the price on the PO line, rather than you
+  re-entering it by hand in Inventory. A PO can be received in more than
+  one shipment (partial receipt is tracked per line).
+- **Check the numbers**: Reports & Analytics pulls straight from
+  Transactions, Billing, Procurement and Inventory — nothing is entered
+  separately there. VAT summary splits Output (sales) from Input
+  (expenses + purchase orders) so it lines up with how a UAE VAT return
+  is actually structured. Export transactions to Excel from the same
+  page.
+- **Generate an AI insight**: AI Insights → Generate now (admin-only,
+  since each click is a real API call with a real, if small, cost).
+  Reads the current month's data and writes a short commentary — it's a
+  starting point for a conversation, not a number to take at face value
+  without checking.
 
 ---
 
 ## What's built vs. what's next
 
 **Working end to end**: real per-user login, Master Data, Transactions
-(with VAT and full audit trail), Cash Ledger, Staff Accounts, **Billing
+(with VAT and full audit trail), Cash Ledger, Staff Accounts, Billing
 (customer invoices with real UAE tax-invoice PDFs and a
-draft→sent→paid/cancelled status workflow)**, **Inventory (raw materials
-and finished goods, stock movements, low-stock alerts)**.
+draft→sent→paid/cancelled status workflow), Inventory (raw materials and
+finished goods, stock movements, low-stock alerts), **Procurement
+(suppliers, purchase orders, partial/full receiving that feeds Inventory
+directly)**, **Reports & Analytics (revenue/expense trend, VAT summary,
+top expense categories, outstanding invoices, Excel export)**, **AI
+Insights (Claude-generated commentary on the current data, cached per
+generation rather than regenerated on every visit)**.
 
-**Next up**: Procurement (formal purchase orders to suppliers), HR &
-Payroll (needs UAE gratuity/WPS rules verified against current sources
-before the calculation logic is written — not something to guess at),
-then Reports & Analytics and AI Insights once the rest of the data is
-flowing.
+**Deliberately not built**: HR & Payroll — out of scope per your
+instruction, not an oversight. If that changes later, it needs UAE
+gratuity/WPS rules verified against current sources before any
+calculation logic gets written, not guessed at.
 
-**Before sending a real invoice**: open `src/lib/company-info.ts` and
+**Before sending a real invoice or PO**: open `src/lib/company-info.ts`
+and
 replace the placeholder address/TRN with your real details — a UAE tax
 invoice is legally required to show a real Tax Registration Number, and
 what's in there now is not one.
